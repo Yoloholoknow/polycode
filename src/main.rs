@@ -1,5 +1,6 @@
 mod adapter;
 mod cli;
+mod commands;
 mod error;
 mod orchestrator;
 mod quota;
@@ -24,15 +25,15 @@ async fn main() {
     if let Some(cmd) = &cli.command {
         match cmd {
             Commands::Setup => {
-                eprintln!("polycode setup: coming in Phase 2 — will select tools and auto-install missing ones.");
+                eprintln!("polycode setup: interactive auto-install coming in a future release. Run `polycode doctor` to check adapter health.");
                 std::process::exit(0);
             }
             Commands::Doctor => {
-                eprintln!("polycode doctor: coming in Phase 2 — will check adapter health and quota state.");
+                commands::doctor().await;
                 std::process::exit(0);
             }
             Commands::Status => {
-                eprintln!("polycode status: coming in Phase 2 — will show per-adapter quota usage.");
+                commands::status();
                 std::process::exit(0);
             }
         }
