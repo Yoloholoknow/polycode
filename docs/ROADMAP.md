@@ -42,9 +42,9 @@ Single developer, part-time evenings/weekends. Each phase ends in a shippable ar
 
 | Phase | Duration | Goal | Shippable |
 |-------|----------|------|-----------|
-| **0. Validation** | 1 week | Install + test every CLI headless, ToS skim, adapter matrix | `docs/adapter-matrix.md` |
-| **1. Skeleton + 1 adapter** | 1 week | Rust project, Adapter trait, Claude adapter, passthrough end-to-end | `polycode "prompt"` works with one tool |
-| **2. Multi-adapter + quota fallback** | 2 weeks | All installed adapters, SQLite quota tracker, fallback chain, `doctor` + `status` | **v0.1.0** — manual select + fallback. **First public release.** |
+| **0. Validation** | 1 week | Install + test every CLI headless, ToS skim, adapter matrix | `docs/adapter-matrix.md` ✅ |
+| **1. Skeleton + 1 adapter** | 1 week | Rust project, Adapter trait, Claude adapter, passthrough end-to-end | `polycode "prompt"` works with one tool ✅ |
+| **2. Multi-adapter + quota fallback** | 2 weeks | All installed adapters, SQLite quota tracker, fallback chain, `doctor` + `status` | **v0.1.0** — manual select + fallback. **First public release.** ✅ |
 | **3. Journal context** | 1 week | `.polycode/` layout, `journal.md`, auto-update, `init` + `journal` commands | **v0.2.0** — context-aware |
 | **4. Rule-based router** | 1 week | Heuristic router (no LLM) on prompt patterns + quota state | **v0.3.0** — automatic selection |
 | **5. LLM classifier** | 2 weeks | Ollama integration, classifier prompt + categories, latency tuning, caching | **v0.4.0** — intelligent routing. **Launch on HN/Reddit.** |
@@ -55,6 +55,16 @@ Single developer, part-time evenings/weekends. Each phase ends in a shippable ar
 
 **To v0.5 (launch-worthy):** ~8–9 weeks part-time.
 **To v1.0:** ~14–18 weeks part-time.
+
+### Near-term backlog (deferred from Phase 2, tracked)
+
+These were scoped out of Phase 2 to keep v0.1.0 tight. Natural next steps before or alongside Phase 3:
+
+| Item | What | Why deferred |
+|------|------|-------------|
+| **gemini-api adapter** | Direct REST client (`reqwest`) hitting `generativelanguage.googleapis.com` with user-supplied `GEMINI_API_KEY`. NOT a CLI wrapper — ToS-safe. | Different code path (HTTP vs subprocess); pay-per-token key is off-theme from "wrap tools you already pay for." |
+| **TOML config** (`~/.polycode/config.toml`) | Enabled adapters, fallback order, keys (e.g. `GEMINI_API_KEY`). Unlocks per-user adapter selection without recompiling. | Hardcoded chain is sufficient for v0.1.0; config adds validation/defaults/error-handling scope. |
+| **`setup` auto-install** | Interactive tool selection + auto-install of missing CLIs. Currently stubbed: runs `polycode doctor` instead. | Needs interactive I/O design; not blocking first public release. |
 
 ### Critical milestones
 
