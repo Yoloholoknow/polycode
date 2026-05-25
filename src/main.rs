@@ -2,6 +2,7 @@ mod adapter;
 mod cli;
 mod error;
 mod orchestrator;
+mod quota;
 
 use clap::Parser;
 use cli::{Cli, Commands};
