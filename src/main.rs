@@ -4,7 +4,7 @@ mod error;
 mod orchestrator;
 
 use clap::Parser;
-use cli::Cli;
+use cli::{Cli, Commands};
 use orchestrator::Orchestrator;
 
 #[tokio::main]
@@ -19,6 +19,25 @@ async fn main() {
 
     let cli = Cli::parse();
 
+    // Dispatch subcommands
+    if let Some(cmd) = &cli.command {
+        match cmd {
+            Commands::Setup => {
+                eprintln!("polycode setup: coming in Phase 2 — will select tools and auto-install missing ones.");
+                std::process::exit(0);
+            }
+            Commands::Doctor => {
+                eprintln!("polycode doctor: coming in Phase 2 — will check adapter health and quota state.");
+                std::process::exit(0);
+            }
+            Commands::Status => {
+                eprintln!("polycode status: coming in Phase 2 — will show per-adapter quota usage.");
+                std::process::exit(0);
+            }
+        }
+    }
+
+    // Default: route prompt
     if cli.prompt.is_none() && !cli.dry_run {
         eprintln!("polycode: no prompt given. Use --help for usage.");
         std::process::exit(1);

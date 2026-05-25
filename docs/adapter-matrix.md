@@ -12,10 +12,12 @@
 |------|--------|---------|-----------------|----------|--------|
 | claude-code | `claude` | 2.1.150 | `claude -p "<prompt>"` | `--output-format json` | ✅ Validated + implemented |
 | codex | `codex` | 0.128.0 | `codex exec "<prompt>"` | no structured JSON | ✅ Installed, Phase 2 |
-| gemini-cli | `gemini` | 0.37.2 | `gemini -p "<prompt>"` | `-o json` | ✅ Installed, Phase 2 |
-| opencode | `opencode` | 1.14.50 | `opencode run "<msg>"` | `--format json` | ✅ Installed, Phase 2 |
+| opencode | `opencode` | 1.14.50 | `opencode run "<msg>"` | `--format json` | ✅ Installed, Phase 2 (block Google models) |
 | copilot | `copilot` | 1.0.54 | `copilot -p "<prompt>"` | `--output-format json` | ✅ Installed, Phase 2 |
 | aider | `aider` | 0.86.2 | `aider --message "<msg>" --yes-always` | text only | ✅ Installed, Phase 2 |
+| gemini-api | (reqwest) | — | direct REST API | json | ✅ Phase 2 — use GEMINI_API_KEY |
+| ~~gemini-cli~~ | ~~`gemini`~~ | ~~0.37.2~~ | — | — | ❌ **EOL June 18 2026** — do not implement |
+| ~~antigravity~~ | — | — | — | — | ❌ **PROHIBITED** — ToS bans 3rd-party wrappers; accounts banned |
 
 ---
 
