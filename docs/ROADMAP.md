@@ -108,18 +108,18 @@ polycode init                    # initialize .polycode/ in current directory
 
 Tools targeted by the adapter layer. All have headless/non-interactive modes.
 
-| Tool | Status | Headless command | Notes |
-|------|--------|-----------------|-------|
-| claude-code | Installed | `claude -p "<prompt>" --output-format json` | Phase 1 proving adapter |
-| codex | Installed | `codex exec "<prompt>"` | Phase 2 |
-| gemini-cli | Installed | `gemini -p "<prompt>" -o json` | Phase 2 |
-| opencode | Installed | `opencode run "<msg>" --format json` | Phase 2; also supports multiple providers |
-| copilot | To install | `gh copilot suggest` or standalone | Phase 2 |
-| aider | To install | `aider --message "..."` | Phase 2 candidate |
-| others | TBD | See `docs/adapter-matrix.md` | Phase 0 discovery |
+| Tool | Status | Integration method | Notes |
+|------|--------|------------------|-------|
+| claude-code | ✅ Installed | `claude -p "<prompt>" --output-format json` | Phase 1 — proven. ToS: explicitly allowed. |
+| codex | ✅ Installed | `codex exec "<prompt>"` | Phase 2. ToS: allowed (`codex exec` designed for automation). |
+| copilot | ✅ Installed | `copilot -p "<prompt>" --output-format json` | Phase 2. ToS: explicitly allowed (GitHub docs programmatic use). |
+| opencode | ✅ Installed | `opencode run "<msg>" --format json` | Phase 2. ToS: allowed, but **block Google models** (see ToS analysis). |
+| aider | ✅ Installed | `aider --message "<msg>" --yes-always` | Phase 2. ToS: open source (Apache 2.0), no restrictions. |
+| gemini-api | Direct API | `reqwest` → generativelanguage.googleapis.com | Phase 2. ToS: ✅ official integration. **NOT a CLI wrapper** — user provides GEMINI_API_KEY. |
+| ~~gemini-cli~~ | ❌ EOL | — | **Dead June 18, 2026.** Do not implement. |
+| ~~antigravity~~ | ❌ BANNED | — | Google ToS explicitly prohibits; accounts banned. Claude Code named in Google FAQ. |
 
-See [docs/adapter-matrix.md](adapter-matrix.md) for full validation details
-(written during Phase 0).
+See [docs/adapter-matrix.md](adapter-matrix.md) and [docs/tos-analysis.md](tos-analysis.md).
 
 ---
 
