@@ -9,7 +9,6 @@ static INSTALL_HINTS: &[(&str, &str)] = &[
     ("codex",       "npm install -g @openai/codex"),
     ("copilot",     "brew install copilot-cli  OR  gh extension install github/gh-copilot"),
     ("opencode",    "npm install -g opencode  OR  brew install opencode"),
-    ("aider",       "brew install aider  OR  pip install aider-chat"),
 ];
 
 fn install_hint(id: &str) -> &'static str {

@@ -183,7 +183,6 @@ pub fn classify_stderr(stderr: &str, exit_code: i32) -> ErrorKind {
     ErrorKind::UnknownError(stderr.to_string())
 }
 
-pub mod aider;
 pub mod claude;
 pub mod codex;
 pub mod copilot;
@@ -191,7 +190,7 @@ pub mod opencode;
 
 // ── Adapter registry ──────────────────────────────────────────────────────────
 
-pub const DEFAULT_CHAIN: &[&str] = &["claude-code", "codex", "copilot", "opencode", "aider"];
+pub const DEFAULT_CHAIN: &[&str] = &["claude-code", "codex", "copilot", "opencode"];
 
 pub fn build_all() -> Vec<Box<dyn Adapter>> {
     vec![
@@ -199,7 +198,6 @@ pub fn build_all() -> Vec<Box<dyn Adapter>> {
         Box::new(codex::CodexAdapter::new()),
         Box::new(copilot::CopilotAdapter::new()),
         Box::new(opencode::OpenCodeAdapter::new()),
-        Box::new(aider::AiderAdapter::new()),
     ]
 }
 
@@ -209,7 +207,6 @@ pub fn by_id(id: &str) -> Option<Box<dyn Adapter>> {
         "codex" => Some(Box::new(codex::CodexAdapter::new())),
         "copilot" => Some(Box::new(copilot::CopilotAdapter::new())),
         "opencode" => Some(Box::new(opencode::OpenCodeAdapter::new())),
-        "aider" => Some(Box::new(aider::AiderAdapter::new())),
         _ => None,
     }
 }

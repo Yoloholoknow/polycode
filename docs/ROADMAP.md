@@ -44,7 +44,7 @@ Single developer, part-time evenings/weekends. Each phase ends in a shippable ar
 |-------|----------|------|-----------|
 | **0. Validation** | 1 week | Install + test every CLI headless, ToS skim, adapter matrix | `docs/adapter-matrix.md` ✅ |
 | **1. Skeleton + 1 adapter** | 1 week | Rust project, Adapter trait, Claude adapter, passthrough end-to-end | `polycode "prompt"` works with one tool ✅ |
-| **2. Multi-adapter + quota fallback** | 2 weeks | All installed adapters, SQLite quota tracker, fallback chain, `doctor` + `status` | **v0.1.0** — manual select + fallback. **First public release.** ✅ |
+| **2. Multi-adapter + quota fallback** | 2 weeks | All installed adapters (claude-code, codex, copilot, opencode), SQLite quota tracker, fallback chain, `doctor` + `status` | **v0.1.0** — manual select + fallback. **First public release.** ✅ |
 | **3. Journal context** | 1 week | `.polycode/` layout, `journal.md`, auto-update, `init` + `journal` commands | **v0.2.0** — context-aware |
 | **4. Rule-based router** | 1 week | Heuristic router (no LLM) on prompt patterns + quota state | **v0.3.0** — automatic selection |
 | **5. LLM classifier** | 2 weeks | Ollama integration, classifier prompt + categories, latency tuning, caching | **v0.4.0** — intelligent routing. **Launch on HN/Reddit.** |
@@ -124,8 +124,9 @@ Tools targeted by the adapter layer. All have headless/non-interactive modes.
 | codex | ✅ Installed | `codex exec "<prompt>"` | Phase 2. ToS: allowed (`codex exec` designed for automation). |
 | copilot | ✅ Installed | `copilot -p "<prompt>" --output-format json` | Phase 2. ToS: explicitly allowed (GitHub docs programmatic use). |
 | opencode | ✅ Installed | `opencode run "<msg>" --format json` | Phase 2. ToS: allowed, but **block Google models** (see ToS analysis). |
-| aider | ✅ Installed | `aider --message "<msg>" --yes-always` | Phase 2. ToS: open source (Apache 2.0), no restrictions. |
+| coderabbit | 🟡 Planned | TBD — needs Phase-0 validation | Specialized: `CodeReview` tasks only. **Not in DEFAULT_CHAIN.** Free tier has own backend. See [adapter-matrix.md](adapter-matrix.md). |
 | gemini-api | Direct API | `reqwest` → generativelanguage.googleapis.com | Phase 2. ToS: ✅ official integration. **NOT a CLI wrapper** — user provides GEMINI_API_KEY. |
+| ~~aider~~ | ❌ Out of scope | — | No native model — proxies user-supplied provider API keys (OpenAI, Anthropic, etc.). Same keys work in any other harness; wrapping Aider adds no quota. See [tos-analysis.md](tos-analysis.md). |
 | ~~gemini-cli~~ | ❌ EOL | — | **Dead June 18, 2026.** Do not implement. |
 | ~~antigravity~~ | ❌ BANNED | — | Google ToS explicitly prohibits; accounts banned. Claude Code named in Google FAQ. |
 
@@ -162,3 +163,46 @@ See [docs/adapter-matrix.md](adapter-matrix.md) and [docs/tos-analysis.md](tos-a
 - [ ] Demo video <2 minutes
 - [ ] README with animated GIF
 - [ ] 90% test coverage on router and quota logic
+
+---
+
+## Future / post-1.0 ideation — free LLM APIs into CLI harnesses
+
+> Not planned for v1.0. Captured here for design continuity.
+
+**Current scope:** Polycode wraps CLI tools that ship with their own built-in quota —
+Claude Code (Pro/Max), Codex (sign-in free tier), GitHub Copilot, OpenCode (provider
+free tiers), CodeRabbit (free plan). Each tool authenticates as the user; Polycode
+routes between them.
+
+**Longer-term direction:** _Inject_ free-tier LLM API providers into existing CLI
+harnesses that support "bring your own model" configuration. Examples:
+
+| API provider | Free tier | Harnesses that may accept a custom endpoint |
+|---|---|---|
+| OpenRouter | 10 free models, rotating | Claude Code (custom base URL), OpenCode model alias |
+| Google AI Studio (Gemini) | `gemini-2.0-flash` free tier | Claude Code, Codex, any OpenAI-compat endpoint |
+| Mistral La Plateforme | `mistral-small` free tier | Any OpenAI-compat harness |
+| NVIDIA NIM | Free credits, many models | Any OpenAI-compat harness |
+| Groq / Cerebras / Together | Generous free tiers | Any OpenAI-compat harness |
+
+This would let Polycode route a prompt to whichever harness has the best UX _and_ bill
+it to whichever free API key has remaining quota — decoupling "harness quality" from
+"model cost."
+
+**Why it's deferred:**
+
+1. Each harness exposes a different surface for custom endpoints (env vars, config file,
+   proxy URL, model-name aliasing). Research + ToS review needed per harness.
+2. Quota tracking becomes indirect — the harness is the caller, not Polycode. Need
+   either side-channel observation or harness-level hooks.
+3. Not all free API tiers are stable or have predictable rate-limit signals.
+4. The abstraction is unclear: local OpenAI-compat proxy Polycode runs? Per-harness
+   config injection at invocation time? Needs design work.
+
+**Open questions for future design:**
+
+- Which harnesses today support `OPENAI_BASE_URL` or equivalent?
+- Can Polycode inject model/endpoint config per invocation without touching global state?
+- What's the right quota-tracking primitive when the harness mediates the API call?
+- ToS for each provider re: automated/programmatic use via a third-party harness?

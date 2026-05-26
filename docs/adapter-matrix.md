@@ -14,8 +14,9 @@
 | codex | `codex` | 0.133.0 | `codex exec "<prompt>"` | text stdout (banner → stderr) | ✅ Validated + implemented |
 | opencode | `opencode` | 1.15.10 | `opencode run "<msg>"` | `--format json` JSONL event stream | ✅ Validated + implemented (block Google models) |
 | copilot | `copilot` | 1.0.54 | `copilot -p "<prompt>"` | `--output-format json` JSONL event stream | ✅ Validated + implemented |
-| aider | `aider` | 0.86.2 | `aider --message "<msg>" --yes-always` | text stdout | ✅ Validated + implemented |
+| coderabbit | `coderabbit` | TBD | TBD — needs validation | TBD | 🟡 Planned — `CodeReview` specialization. Phase-0 validation needed before implementation. |
 | gemini-api | (reqwest) | — | direct REST API | json | ✅ Phase 2 — use GEMINI_API_KEY |
+| ~~aider~~ | ~~`aider`~~ | ~~0.86.2~~ | — | — | ❌ **Out of scope** — no native model; proxies user provider keys. No quota to stretch. |
 | ~~gemini-cli~~ | ~~`gemini`~~ | ~~0.37.2~~ | — | — | ❌ **EOL June 18 2026** — do not implement |
 | ~~antigravity~~ | — | — | — | — | ❌ **PROHIBITED** — ToS bans 3rd-party wrappers; accounts banned |
 
@@ -100,16 +101,34 @@
 
 ---
 
-### aider ✅ (Phase 2 — implemented)
+### ~~aider~~ ❌ Out of scope
 
-- **Binary:** `aider` (at `/opt/homebrew/bin/aider`)
-- **Version:** 0.86.2
-- **Headless command:** `aider --message "<msg>" --yes-always --no-git --no-pretty [--model <provider>/<model>]`
-- **Model flag:** `--model` (supports many providers: `openai/gpt-4o`, `anthropic/claude-sonnet-4-6`, etc.)
-- **Output:** text stdout (trimmed). `--no-pretty` reduces ANSI formatting. `--no-git` prevents auto-commits.
-- **Rate limit signal:** varies by provider; exit non-0 + stderr quota/429 message.
-- **Auth prereqs:** provider-specific API key env vars (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.)
-- **Notes:** Strong code-edit capabilities (applies diffs directly). `--yes-always` for non-interactive approval.
+Aider has no native model. It is a front-end that routes prompts to user-supplied provider
+API keys (OpenAI, Anthropic, etc.). Those keys can be used directly with any other harness
+in the Polycode chain; wrapping Aider adds no additional quota. Removed from adapter registry
+and DEFAULT_CHAIN. See [tos-analysis.md](tos-analysis.md) for full rationale.
+
+---
+
+### coderabbit 🟡 Planned — validation needed
+
+> **Role:** `CodeReview` task category only. Not in `DEFAULT_CHAIN`. Available via `--tool coderabbit`.
+
+**Validation checklist (Phase-0 work before implementation):**
+
+- [ ] Binary name and install path (`brew install coderabbit`? package name?)
+- [ ] Headless/non-interactive flag (`--prompt-only`? `review`? something else?)
+- [ ] Output format (JSON? plain text? JSONL?)
+- [ ] Model flag (if any)
+- [ ] Rate limit / quota error signals (exit code + stderr pattern)
+- [ ] Auth prereqs (API key? OAuth? GitHub login?)
+- [ ] Free-tier limits and reset cadence
+
+**Implementation plan (after validation):**
+- Implement `src/adapter/coderabbit.rs` following `claude.rs` template
+- Register in `by_id()` only — **not** `build_all()` or `DEFAULT_CHAIN`
+- `ModelInfo.strengths = [TaskCategory::CodeReview]`
+- Phase 4 router will route `CodeReview` tasks here automatically
 
 ---
 
