@@ -2,3 +2,4 @@
 .polycode/cache/
 .polycode/state.db
 *.pdb
+.aider*
