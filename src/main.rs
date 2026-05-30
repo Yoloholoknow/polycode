@@ -5,6 +5,7 @@ mod error;
 mod journal;
 mod orchestrator;
 mod quota;
+mod router;
 
 use clap::Parser;
 use cli::{Cli, Commands};

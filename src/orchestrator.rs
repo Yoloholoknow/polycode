@@ -4,6 +4,7 @@ use crate::{
     error::PolycodeError,
     journal::Journal,
     quota::{InvocationRecord, QuotaTracker},
+    router::{RoutePlan, Router},
 };
 use std::env;
 use std::time::Duration;
@@ -17,22 +18,10 @@ impl Orchestrator {
         let prompt = cli.prompt.as_deref().unwrap_or("").to_string();
         let cwd = env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
 
-        // Build candidate list.
-        // --tool X: forced, strict (no fallback on failure — user asked for that tool).
-        // Default: walk DEFAULT_CHAIN with quota fallback.
+        // --tool X: forced, strict (single candidate, no fallback on failure).
         let forced = cli.tool.is_some();
-        let candidates: Vec<&str> = if let Some(tool) = cli.tool.as_deref() {
-            vec![tool]
-        } else {
-            adapter::DEFAULT_CHAIN.to_vec()
-        };
 
-        // Dry-run: resolve first available (not cooling down + binary present) and print.
-        if cli.dry_run {
-            return Self::dry_run(&candidates, cli, &prompt);
-        }
-
-        // Open quota tracker. If it fails, log and continue without tracking.
+        // Open quota tracker first — router uses cooldown state for ranking.
         let tracker = match QuotaTracker::open() {
             Ok(t) => Some(t),
             Err(e) => {
@@ -41,7 +30,25 @@ impl Orchestrator {
             }
         };
 
-        // Inject journal context into the prompt (best-effort; skipped on --dry-run above).
+        // Build route plan: classify prompt, rank adapters+models by heuristic + quota state.
+        let plan = Router::plan(
+            &prompt,
+            cli.tool.as_deref(),
+            cli.model.as_deref(),
+            |id| {
+                tracker
+                    .as_ref()
+                    .and_then(|t| t.is_cooling_down(id).ok().flatten())
+                    .is_some()
+            },
+        );
+
+        // Dry-run: print routing decision and exit without invoking.
+        if cli.dry_run {
+            return Self::dry_run(&plan, &prompt);
+        }
+
+        // Inject journal context into the prompt (best-effort).
         let journal = Journal::open();
         let effective_prompt = match &journal {
             Some(j) => match j.context_block() {
@@ -54,8 +61,10 @@ impl Orchestrator {
         let mut last_error: Option<String> = None;
         let mut tried: Vec<String> = Vec::new();
 
-        for id in &candidates {
-            // Skip adapters in quota cooldown (unless forced — forced must surface the error).
+        for choice in &plan.ranked {
+            let id = &choice.adapter_id;
+
+            // Skip adapters in quota cooldown (router demotes them; orchestrator enforces the skip).
             if !forced {
                 if let Some(ref t) = tracker {
                     if let Ok(Some(until)) = t.is_cooling_down(id) {
@@ -103,11 +112,20 @@ impl Orchestrator {
                 continue;
             }
 
-            // Build request using the (potentially journal-enriched) prompt.
+            // Build request with the router-chosen model.
+            // Router already baked in --model if forced, so choice.model is the final word.
             let mut req = AdapterRequest::new(&effective_prompt, &cwd);
-            if let Some(model) = &cli.model {
+            if let Some(ref model) = choice.model {
                 req = req.with_model(model.clone());
             }
+
+            tracing::debug!(
+                adapter = %id,
+                model = ?choice.model,
+                category = ?plan.category,
+                score = choice.score,
+                "routing decision"
+            );
 
             match adapter.invoke(req).await {
                 Ok(mut result) => {
@@ -117,7 +135,7 @@ impl Orchestrator {
                     if let Some(ref t) = tracker {
                         let _ = t.record_invocation(&InvocationRecord {
                             adapter_id: id.to_string(),
-                            model: result.model_used.clone().or_else(|| cli.model.clone()),
+                            model: result.model_used.clone().or_else(|| choice.model.clone()),
                             success: true,
                             error_kind: None,
                             input_tokens: result.usage.as_ref().map(|u| u.input),
@@ -126,7 +144,7 @@ impl Orchestrator {
                         let _ = t.clear_cooldown(id);
                     }
 
-                    // Append journal entry (best-effort; original prompt, not enriched).
+                    // Append journal entry (original prompt, not journal-enriched).
                     if let Some(ref j) = journal {
                         j.append_entry(id, &prompt, &result.text);
                     }
@@ -144,7 +162,7 @@ impl Orchestrator {
                     if let Some(ref t) = tracker {
                         let _ = t.record_invocation(&InvocationRecord {
                             adapter_id: id.to_string(),
-                            model: cli.model.clone(),
+                            model: choice.model.clone(),
                             success: false,
                             error_kind: Some("QuotaExceeded".to_string()),
                             input_tokens: None,
@@ -155,7 +173,7 @@ impl Orchestrator {
                     last_error = Some(format!("{}: quota exceeded", id));
                     tried.push(format!("{} (quota exceeded)", id));
                     if forced {
-                        break; // Forced: surface the error, don't silently switch.
+                        break;
                     }
                     continue;
                 }
@@ -164,7 +182,7 @@ impl Orchestrator {
                     if let Some(ref t) = tracker {
                         let _ = t.record_invocation(&InvocationRecord {
                             adapter_id: id.to_string(),
-                            model: cli.model.clone(),
+                            model: choice.model.clone(),
                             success: false,
                             error_kind: Some(e.to_string()),
                             input_tokens: None,
@@ -188,12 +206,22 @@ impl Orchestrator {
         Err(PolycodeError::NoAdapter(summary))
     }
 
-    fn dry_run(candidates: &[&str], cli: &Cli, prompt: &str) -> Result<(), PolycodeError> {
-        let model = cli.model.as_deref().unwrap_or("<adapter default>");
+    fn dry_run(plan: &RoutePlan, prompt: &str) -> Result<(), PolycodeError> {
         println!("routing decision:");
-        println!("  chain   : {}", candidates.join(" -> "));
-        println!("  model   : {}", model);
-        println!("  prompt  : {}", prompt);
+        println!("  category : {:?}", plan.category);
+        println!("  ranked   :");
+        for (i, choice) in plan.ranked.iter().enumerate() {
+            let flag = if choice.cooling_down { " (cooling down)" } else { "" };
+            println!(
+                "    {}. {:<14} → {:<40} (score {}{})",
+                i + 1,
+                choice.adapter_id,
+                choice.model_display,
+                choice.score,
+                flag,
+            );
+        }
+        println!("  prompt   : {}", prompt);
         println!("[dry-run] not invoking.");
         Ok(())
     }
