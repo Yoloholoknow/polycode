@@ -1,4 +1,5 @@
 use crate::adapter::{self, HealthStatus};
+use crate::journal::Journal;
 use crate::quota::QuotaTracker;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -100,4 +101,87 @@ pub fn status() {
     }
 
     println!();
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+
+pub fn init() {
+    let cwd = match std::env::current_dir() {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("polycode init: cannot determine current directory — {}", e);
+            return;
+        }
+    };
+
+    match Journal::init(&cwd) {
+        Ok(path) => println!("polycode init: journal ready at {}", path.display()),
+        Err(e)   => eprintln!("polycode init: failed — {}", e),
+    }
+}
+
+// ── journal ───────────────────────────────────────────────────────────────────
+
+/// Actions dispatched from `polycode journal [subcommand]`.
+pub enum JournalCmd {
+    Clear,
+    Edit,
+}
+
+pub fn journal(action: Option<JournalCmd>) -> i32 {
+    match action {
+        None                    => journal_view(),
+        Some(JournalCmd::Clear) => journal_clear(),
+        Some(JournalCmd::Edit)  => journal_edit(),
+    }
+}
+
+fn journal_view() -> i32 {
+    match Journal::open() {
+        None => {
+            eprintln!("polycode journal: no journal found — run `polycode init` in your project root.");
+            1
+        }
+        Some(j) => match j.read() {
+            Ok(contents) => { print!("{}", contents); 0 }
+            Err(e)       => { eprintln!("polycode journal: read error — {}", e); 1 }
+        },
+    }
+}
+
+fn journal_clear() -> i32 {
+    match Journal::open() {
+        None => {
+            eprintln!("polycode journal: no journal found — run `polycode init` first.");
+            1
+        }
+        Some(j) => match j.clear() {
+            Ok(()) => { println!("polycode journal: cleared."); 0 }
+            Err(e) => { eprintln!("polycode journal: clear failed — {}", e); 1 }
+        },
+    }
+}
+
+fn journal_edit() -> i32 {
+    let j = match Journal::open() {
+        Some(j) => j,
+        None => {
+            eprintln!("polycode journal: no journal found — run `polycode init` first.");
+            return 1;
+        }
+    };
+
+    let editor = std::env::var("EDITOR")
+        .or_else(|_| std::env::var("VISUAL"))
+        .unwrap_or_else(|_| "vi".to_string());
+
+    match std::process::Command::new(&editor).arg(j.path()).status() {
+        Ok(s) => {
+            if s.success() { 0 } else { s.code().unwrap_or(1) }
+        }
+        Err(e) => {
+            eprintln!("polycode journal: cannot launch editor '{}' — {}", editor, e);
+            1
+        }
+    }
 }
