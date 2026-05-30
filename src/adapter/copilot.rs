@@ -55,8 +55,12 @@ fn parse_copilot_output(stdout: &str) -> Option<(String, Option<u64>)> {
         if let Ok(event) = serde_json::from_str::<CopilotEvent>(line) {
             if event.event_type == "assistant.message" {
                 if let Some(data) = event.data {
-                    content = data.content;
-                    output_tokens = data.output_tokens;
+                    if let Some(c) = data.content {
+                        content = Some(c);
+                    }
+                    if data.output_tokens.is_some() {
+                        output_tokens = data.output_tokens;
+                    }
                 }
             }
         }
