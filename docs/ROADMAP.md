@@ -46,7 +46,7 @@ Single developer, part-time evenings/weekends. Each phase ends in a shippable ar
 | **1. Skeleton + 1 adapter** | 1 week | Rust project, Adapter trait, Claude adapter, passthrough end-to-end | `polycode "prompt"` works with one tool ✅ |
 | **2. Multi-adapter + quota fallback** | 2 weeks | All installed adapters (claude-code, codex, copilot, opencode), SQLite quota tracker, fallback chain, `doctor` + `status` | **v0.1.0** — manual select + fallback. **First public release.** ✅ |
 | **3. Journal context** | 1 week | `.polycode/` layout, `journal.md`, auto-update, `init` + `journal` commands | **v0.2.0** — context-aware ✅ |
-| **4. Rule-based router** | 1 week | Heuristic router (no LLM) on prompt patterns + quota state | **v0.3.0** — automatic selection |
+| **4. Rule-based router** | 1 week | Heuristic router (no LLM) on prompt patterns + quota state | **v0.3.0** — automatic selection ✅ |
 | **5. LLM classifier** | 2 weeks | Ollama integration, classifier prompt + categories, latency tuning, caching | **v0.4.0** — intelligent routing. **Launch on HN/Reddit.** |
 | **6. TUI mode** | 1–2 weeks | `polycode chat` (ratatui), multi-turn sessions, live journal pane | **v0.5.0** — interactive |
 | **7. Polish + telemetry** | 1 week | Opt-in local telemetry, `replay`, `history`, better errors | **v0.6.0** — daily-driver quality |

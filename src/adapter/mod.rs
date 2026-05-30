@@ -5,7 +5,6 @@ use std::time::Duration;
 
 // ── Taxonomy ─────────────────────────────────────────────────────────────────
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TaskCategory {
     QuickEdit,
@@ -19,6 +18,7 @@ pub enum TaskCategory {
     Explanation,
 }
 
+// ModelTier is stored in ModelInfo but not yet read by the router (Phase 5 will use it).
 #[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum ModelTier {
@@ -29,7 +29,6 @@ pub enum ModelTier {
 
 // ── Model info ────────────────────────────────────────────────────────────────
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelInfo {
     pub id: String,
@@ -139,7 +138,6 @@ impl HealthStatus {
 #[async_trait]
 pub trait Adapter: Send + Sync {
     fn id(&self) -> &'static str;
-    #[allow(dead_code)]
     fn models(&self) -> Vec<ModelInfo>;
     async fn health_check(&self) -> HealthStatus;
     async fn invoke(&self, request: AdapterRequest) -> Result<AdapterResult, ErrorKind>;
