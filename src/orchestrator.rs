@@ -2,6 +2,7 @@ use crate::{
     adapter::{self, AdapterRequest, ErrorKind},
     cli::Cli,
     error::PolycodeError,
+    journal::Journal,
     quota::{InvocationRecord, QuotaTracker},
 };
 use std::env;
@@ -38,6 +39,16 @@ impl Orchestrator {
                 tracing::warn!("quota tracker unavailable: {}", e);
                 None
             }
+        };
+
+        // Inject journal context into the prompt (best-effort; skipped on --dry-run above).
+        let journal = Journal::open();
+        let effective_prompt = match &journal {
+            Some(j) => match j.context_block() {
+                Some(ctx) => format!("{}\n\n{}", ctx, prompt),
+                None      => prompt.clone(),
+            },
+            None => prompt.clone(),
         };
 
         let mut last_error: Option<String> = None;
@@ -92,15 +103,17 @@ impl Orchestrator {
                 continue;
             }
 
-            // Build request.
-            let mut req = AdapterRequest::new(&prompt, &cwd);
+            // Build request using the (potentially journal-enriched) prompt.
+            let mut req = AdapterRequest::new(&effective_prompt, &cwd);
             if let Some(model) = &cli.model {
                 req = req.with_model(model.clone());
             }
 
             match adapter.invoke(req).await {
-                Ok(result) => {
-                    // Record success.
+                Ok(mut result) => {
+                    result.adapter = id.to_string();
+
+                    // Record success in quota tracker.
                     if let Some(ref t) = tracker {
                         let _ = t.record_invocation(&InvocationRecord {
                             adapter_id: id.to_string(),
@@ -112,6 +125,12 @@ impl Orchestrator {
                         });
                         let _ = t.clear_cooldown(id);
                     }
+
+                    // Append journal entry (best-effort; original prompt, not enriched).
+                    if let Some(ref j) = journal {
+                        j.append_entry(id, &prompt, &result.text);
+                    }
+
                     print!("{}", result.text);
                     return Ok(());
                 }

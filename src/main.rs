@@ -2,12 +2,14 @@ mod adapter;
 mod cli;
 mod commands;
 mod error;
+mod journal;
 mod orchestrator;
 mod quota;
 
 use clap::Parser;
 use cli::{Cli, Commands};
 use orchestrator::Orchestrator;
+use cli::JournalAction;
 
 #[tokio::main]
 async fn main() {
@@ -35,6 +37,17 @@ async fn main() {
             Commands::Status => {
                 commands::status();
                 std::process::exit(0);
+            }
+            Commands::Init => {
+                commands::init();
+                std::process::exit(0);
+            }
+            Commands::Journal(args) => {
+                let action = args.action.as_ref().map(|a| match a {
+                    JournalAction::Clear => commands::JournalCmd::Clear,
+                    JournalAction::Edit  => commands::JournalCmd::Edit,
+                });
+                std::process::exit(commands::journal(action));
             }
         }
     }

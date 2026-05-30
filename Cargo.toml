@@ -1,6 +1,6 @@
 [package]
 name = "polycode"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "CLI router for multiple AI coding assistants with intelligent routing and quota fallback"
@@ -35,4 +35,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Quota tracker
 rusqlite = { version = "0.31", features = ["bundled"] }
 dirs = "5"
+
+# Date formatting (journal timestamps)
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
 

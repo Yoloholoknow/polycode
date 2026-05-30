@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, Args};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -41,4 +41,25 @@ pub enum Commands {
 
     /// Show quota state for all enabled adapters
     Status,
+
+    /// Initialize .polycode/ in the current directory
+    Init,
+
+    /// View or manage the project journal
+    Journal(JournalArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct JournalArgs {
+    #[command(subcommand)]
+    pub action: Option<JournalAction>,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum JournalAction {
+    /// Reset the journal to the initial template
+    Clear,
+
+    /// Open the journal in $EDITOR
+    Edit,
 }

@@ -80,6 +80,8 @@ pub struct AdapterResult {
     pub usage: Option<TokenUsage>,
     /// Raw stdout from the subprocess (for debugging)
     pub raw: String,
+    /// Adapter id that produced this result — set by the orchestrator after invoke
+    pub adapter: String,
 }
 
 impl AdapterResult {
@@ -89,6 +91,7 @@ impl AdapterResult {
             model_used: None,
             usage: None,
             raw: raw.into(),
+            adapter: String::new(),
         }
     }
 }
