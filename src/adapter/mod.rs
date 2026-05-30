@@ -184,6 +184,32 @@ pub fn classify_stderr(stderr: &str, exit_code: i32) -> ErrorKind {
 }
 
 pub mod claude;
+pub mod codex;
+pub mod copilot;
+pub mod opencode;
+
+// ── Adapter registry ──────────────────────────────────────────────────────────
+
+pub const DEFAULT_CHAIN: &[&str] = &["claude-code", "codex", "copilot", "opencode"];
+
+pub fn build_all() -> Vec<Box<dyn Adapter>> {
+    vec![
+        Box::new(claude::ClaudeAdapter::new()),
+        Box::new(codex::CodexAdapter::new()),
+        Box::new(copilot::CopilotAdapter::new()),
+        Box::new(opencode::OpenCodeAdapter::new()),
+    ]
+}
+
+pub fn by_id(id: &str) -> Option<Box<dyn Adapter>> {
+    match id {
+        "claude-code" => Some(Box::new(claude::ClaudeAdapter::new())),
+        "codex" => Some(Box::new(codex::CodexAdapter::new())),
+        "copilot" => Some(Box::new(copilot::CopilotAdapter::new())),
+        "opencode" => Some(Box::new(opencode::OpenCodeAdapter::new())),
+        _ => None,
+    }
+}
 
 #[cfg(test)]
 mod tests {

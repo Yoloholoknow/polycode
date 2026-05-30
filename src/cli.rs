@@ -18,7 +18,7 @@ pub struct Cli {
     /// Prompt to send to the AI coding assistant
     pub prompt: Option<String>,
 
-    /// Force a specific adapter (e.g. claude-code, codex, gemini-api, opencode, copilot, aider)
+    /// Force a specific adapter (e.g. claude-code, codex, gemini-api, opencode, copilot, coderabbit)
     #[arg(long, short = 't', value_name = "ADAPTER", global = false)]
     pub tool: Option<String>,
 

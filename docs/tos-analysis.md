@@ -13,7 +13,8 @@
 | **Claude Code** | ✅ ALLOWED | None | Ship as-is |
 | **Codex CLI (OpenAI)** | ✅ ALLOWED | None | Ship as-is |
 | **GitHub Copilot CLI** | ✅ ALLOWED | None | Ship as-is |
-| **Aider** | ✅ ALLOWED | None | Ship as-is |
+| **Aider** | ✅ ALLOWED (out of scope) | None | No native model — removed from adapter chain. See §4. |
+| **CodeRabbit** | ⚠️ PENDING | None | Validate headless ToS before implementation. |
 | **OpenCode** | ✅ ALLOWED (with caveat) | Medium — don't route Google backend through it | Ship; block Google models via opencode |
 | **Gemini CLI** | ⛔ DEAD | EOL June 18, 2026 (25 days) | Drop adapter entirely |
 | **Antigravity CLI** | ❌ PROHIBITED | **HIGH** — accounts banned, named in Google FAQ | Do NOT wrap; use Gemini REST API instead |
@@ -68,11 +69,27 @@ GitHub states: *"This allows you to use Copilot directly from the terminal, but 
 
 ### 4. Aider
 
-**Verdict: ✅ ALLOWED**
+**Verdict: ✅ ALLOWED — but out of scope for Polycode**
 
-Aider is open-source (Apache 2.0). Running open-source software as a subprocess has no ToS restrictions. Users' own API keys (Anthropic, OpenAI, etc.) are used for actual model calls.
+Aider is open-source (Apache 2.0). Running open-source software as a subprocess has no ToS restrictions.
 
-**No ToS risk. Ship as-is.**
+**However, Aider is removed from the Polycode adapter chain.** Aider has no native model. It is a front-end that routes prompts to user-supplied provider API keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.). Those exact same keys can be used directly with claude-code, codex, or opencode — tools already in the Polycode chain. Wrapping Aider provides no additional free quota, no new model access, and no capability not already covered. It adds a dependency for zero gain.
+
+**No ToS risk. Removed for scope reasons, not compliance.**
+
+---
+
+### 4a. CodeRabbit CLI
+
+**Verdict: ⚠️ PENDING — re-verify before implementation**
+
+CodeRabbit offers a cloud AI code review service with a documented free tier. A CLI wrapper (`coderabbit`) exists. Preliminary indicators:
+
+- Open-source tooling supported (free plan for public repos)
+- Automation-friendly (designed for CI integration)
+- No known prohibition on third-party orchestration
+
+**Action:** Before implementing the adapter, re-read CodeRabbit's current ToS and usage policy to confirm headless/automated invocation via Polycode is permitted. Verify that the free tier's CLI invocation is ToS-equivalent to CI integration (it should be — same binary, same user credentials).
 
 ---
 
@@ -162,13 +179,22 @@ Polycode's architecture is on the correct side of this line because:
 
 ---
 
-## Action Items for Phase 2 Implementation
+## Action Items
+
+### Phase 2 (complete ✅)
 
 1. **Implement GeminiApiAdapter** (reqwest-based, not CLI subprocess) instead of any Gemini/Antigravity CLI adapter.
 2. **Block Google models in OpenCode adapter** — when model is `google/...` or `gemini/...`, redirect to GeminiApiAdapter or warn the user.
 3. **Remove Gemini CLI from adapter matrix** — it will be dead before Phase 2 ships.
-4. **Document clearly in README:** Polycode uses each tool's documented automation interface; users are responsible for their own subscriptions.
-5. **Flag Antigravity** in any future "supported tools" list as explicitly unsupported with a note about Google's ToS.
+4. **Remove Aider from adapter chain** — no native model, adds no free quota. Done.
+5. **Document clearly in README:** Polycode uses each tool's documented automation interface; users are responsible for their own subscriptions.
+6. **Flag Antigravity** in any future "supported tools" list as explicitly unsupported with a note about Google's ToS.
+
+### Pre-implementation (CodeRabbit)
+
+1. **Re-read CodeRabbit ToS** at time of implementation — confirm headless invocation is permitted.
+2. **Validate free-tier limits** — document quota/reset cadence in adapter-matrix.md.
+3. **Confirm binary name + install path** before writing the adapter.
 
 ---
 
